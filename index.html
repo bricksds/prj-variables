@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Figma Variables API Interface</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fab fa-figma"></i> Figma Variables API Interface</h1>
+                <p>Consume and visualize Figma local variables from your design files</p>
+            </div>
+        </header>
+
+        <!-- Configuration Panel -->
+        <section class="config-panel">
+            <div class="panel-header">
+                <h2><i class="fas fa-cog"></i> Configuration</h2>
+            </div>
+            <div class="config-form">
+                <div class="form-group">
+                    <label for="figmaToken">
+                        <i class="fas fa-key"></i> Figma Access Token
+                        <span class="required">*</span>
+                    </label>
+                    <input type="password" id="figmaToken" placeholder="figd_..." class="form-control">
+                    <small class="form-help">
+                        Get your token from <a href="https://www.figma.com/developers/api#access-tokens"
+                            target="_blank">Figma Developer Settings</a>
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label for="fileKey">
+                        <i class="fas fa-file"></i> File Key
+                        <span class="required">*</span>
+                    </label>
+                    <input type="text" id="fileKey" placeholder="K2DOh9h4XIGbJtYmMT4Awc" class="form-control">
+                    <small class="form-help">
+                        Extract from Figma file URL: figma.com/file/<strong>FILE_KEY</strong>/...
+                    </small>
+                </div>
+
+                <button id="fetchVariables" class="btn btn-primary">
+                    <i class="fas fa-download"></i> Fetch Variables
+                </button>
+            </div>
+        </section>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="loading-state hidden">
+            <div class="spinner"></div>
+            <p>Fetching variables from Figma API...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="error-state hidden">
+            <div class="error-content">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>Error</h3>
+                <p id="errorMessage"></p>
+                <button id="retryBtn" class="btn btn-secondary">
+                    <i class="fas fa-redo"></i> Retry
+                </button>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <section id="resultsSection" class="results-section hidden">
+            <!-- Summary Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="collectionsCount">0</h3>
+                        <p>Collections</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-palette"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="variablesCount">0</h3>
+                        <p>Variables</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-cloud"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="remoteCount">0</h3>
+                        <p>Remote</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-home"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="localCount">0</h3>
+                        <p>Local</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export Actions -->
+            <div class="export-actions">
+                <button id="exportCssBtn" class="btn btn-primary export-btn">
+                    <i class="fab fa-css3-alt"></i> Exportar CSS
+                </button>
+                <button id="exportScssBtn" class="btn btn-success export-btn">
+                    <i class="fab fa-sass"></i> Exportar SCSS
+                </button>
+                <button id="exportXmlBtn" class="btn btn-warning export-btn">
+                    <i class="fab fa-android"></i> Exportar XML
+                </button>
+
+
+            </div>
+
+            <!-- Filters and Search -->
+            <div class="filters-section">
+                <div class="search-container">
+                    <div class="search-box">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="searchInput" placeholder="Search variables, collections, and values...">
+                        <button id="clearSearchBtn" class="clear-search-btn" title="Clear search">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="search-results-info" id="searchResultsInfo">
+                        <!-- Search results info will be populated here -->
+                    </div>
+                </div>
+
+                <div class="filter-controls">
+                    <div class="filter-group">
+                        <label for="typeFilter">Type</label>
+                        <select id="typeFilter" class="form-control">
+                            <option value="">All Types</option>
+                            <option value="COLOR">Color</option>
+                            <option value="FLOAT">Number</option>
+                            <option value="STRING">String</option>
+                            <option value="BOOLEAN">Boolean</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="locationFilter">Location</label>
+                        <select id="locationFilter" class="form-control">
+                            <option value="">All Locations</option>
+                            <option value="local">Local Only</option>
+                            <option value="remote">Remote Only</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="categoryFilter">Category</label>
+                        <select id="categoryFilter" class="form-control">
+                            <option value="">All Categories</option>
+                            <option value="color">Color</option>
+                            <option value="font">Font</option>
+                            <option value="spacing">Spacing</option>
+                            <option value="border">Border</option>
+                            <option value="size">Size</option>
+
+                            <option value="opacity">Opacity</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="collections">
+                    <i class="fas fa-layer-group"></i> Collections
+                </button>
+                <button class="tab-btn" data-tab="color">
+                    <i class="fas fa-palette"></i> Color
+                </button>
+                <button class="tab-btn" data-tab="font">
+                    <i class="fas fa-font"></i> Font
+                </button>
+                <button class="tab-btn" data-tab="spacing">
+                    <i class="fas fa-ruler"></i> Spacing
+                </button>
+                <button class="tab-btn" data-tab="border">
+                    <i class="fas fa-square"></i> Border
+                </button>
+                <button class="tab-btn" data-tab="size">
+                    <i class="fas fa-expand-arrows-alt"></i> Size
+                </button>
+
+                <button class="tab-btn" data-tab="opacity">
+                    <i class="fas fa-adjust"></i> Opacity
+                </button>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="tab-content">
+                <!-- Collections Tab -->
+                <div id="collectionsTab" class="tab-pane active">
+                    <div id="collectionsContainer" class="collections-container">
+                        <!-- Collections will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Color Tab -->
+                <div id="colorTab" class="tab-pane">
+                    <div class="token-section">
+                        <div class="section-header">
+                            <h2><i class="fas fa-palette"></i> Color Tokens</h2>
+                            <div class="token-count" id="colorCount">0 colors</div>
+                        </div>
+                        <div id="colorContainer" class="color-container">
+                            <!-- Color variables will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Font Tab -->
+                <div id="fontTab" class="tab-pane">
+                    <div class="token-section">
+                        <div class="section-header">
+                            <h2><i class="fas fa-font"></i> Font Tokens</h2>
+                            <div class="token-count" id="fontCount">0 font values</div>
+                        </div>
+                        <div id="fontContainer" class="font-container">
+                            <!-- Font variables will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Spacing Tab -->
+                <div id="spacingTab" class="tab-pane">
+                    <div class="token-section">
+                        <div class="section-header">
+                            <h2><i class="fas fa-ruler"></i> Spacing Tokens</h2>
+                            <div class="token-count" id="spacingCount">0 spacing values</div>
+                        </div>
+                        <div id="spacingContainer" class="spacing-container">
+                            <!-- Spacing variables will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Border Tab -->
+                <div id="borderTab" class="tab-pane">
+                    <div class="token-section">
+                        <div class="section-header">
+                            <h2><i class="fas fa-square"></i> Border Tokens</h2>
+                            <div class="token-count" id="borderCount">0 border values</div>
+                        </div>
+                        <div id="borderContainer" class="border-container">
+                            <!-- Border variables will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Size Tab -->
+                <div id="sizeTab" class="tab-pane">
+                    <div class="token-section">
+                        <div class="section-header">
+                            <h2><i class="fas fa-expand-arrows-alt"></i> Size Tokens</h2>
+                            <div class="token-count" id="sizeCount">0 size values</div>
+                        </div>
+                        <div id="sizeContainer" class="size-container">
+                            <!-- Size variables will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Opacity Tab -->
+                <div id="opacityTab" class="tab-pane">
+                    <div class="token-section">
+                        <div class="section-header">
+                            <h2><i class="fas fa-adjust"></i> Opacity Tokens</h2>
+                            <div class="token-count" id="opacityCount">0 opacity values</div>
+                        </div>
+                        <div id="opacityContainer" class="opacity-container">
+                            <!-- Opacity variables will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+        </section>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
